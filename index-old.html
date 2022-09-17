@@ -1,0 +1,304 @@
+<html>
+    <head>
+        <meta name="theme-color" content="rgba(0, 8, 43, 1)">
+        <title>My Title</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="anime.min.js"></script>
+
+        <script>
+            /** utils */
+            function min(a, b) {
+                return a < b ? a : b;
+            }
+            function max(a, b) {
+                return a > b ? a : b;
+            }
+            function getColorString(color) {
+                return "rgba(" + color[0] + ", " + color[1] + ", " + color[2] + ", " + (color[3] || 1) + ")";
+            }
+        </script>
+        <script>
+            /** updateThemeColor */
+            function usePrevColor(top, height, color1, color2) {
+                return color1;
+            }
+
+            function linear(top, height, color1, color2) {
+                const percent = top / height;
+                const color = [0, 0, 0];
+                for (let i = 0; i < 3; i++) {
+                    color[i] = color1[i] * (1 - percent) + color2[i] * percent;
+                }
+                return color;
+            }
+
+            function updateThemeColor() {
+                const scrollTop = $(document).scrollTop();
+
+                let prev = themeRegistrar[0], next = undefined;
+
+                for (let i = 0; i < themeRegistrar.length; i++) {
+                    const cur = themeRegistrar[i];
+                    if (cur.top > scrollTop) {
+                        next = cur;
+                        break;
+                    }
+                    prev = cur;
+                }
+
+                if (!next) {
+                    next = {
+                        top: 999999999,
+                        background: [0, 0, 0],
+                    }
+                }
+
+                const background = (next.gradient || usePrevColor)(scrollTop - prev.top, next.top - prev.top, prev.background, next.background);
+                const themeColor = (next.gradient || usePrevColor)(scrollTop - prev.top, next.top - prev.top, prev.themeColor || prev.background, next.themeColor || next.background);
+                
+                $('body').css("background-color", getColorString(background));
+                document.querySelector('meta[name="theme-color"]').setAttribute('content', getColorString(themeColor));
+            }
+        </script>
+        <script>
+            /** Theme Color and Background Registrar */
+            const themeRegistrar = [
+                {
+                    top: 0,
+                    background: [0, 0, 0],
+                    themeColor: [0, 8, 43],
+                },{
+                    top: 300,
+                    background: [0, 0, 0],
+                    gradient: linear,
+                },{
+                    top: 1900,
+                    background: [0, 0, 0],
+                },{
+                    top: 2400,
+                    background: [161, 199, 235],
+                    gradient: linear,
+                }
+            ];
+        </script>
+        <script>
+            /** onLoop */
+            let railroadPlayed = false;
+            let dogSledPlayed = false;
+
+            function onLoop() {
+                const scrollTop = $(document).scrollTop();
+                console.log(scrollTop);
+
+                /** First image fade on scroll up */
+                const alpha = scrollTop / 300;
+                $('.aurora1-cover').css("background-color", "rgba(0, 0, 0, " + alpha + ")");
+                if (scrollTop > 350) {
+                    $('.aurora1').hide();
+                } else {
+                    $('.aurora1').show();
+                }
+
+                /** First text - This Christmas at Alaska */
+                $('.title').css("color", "rgba(195, 241, 92, " + ((scrollTop - 230) / 300) + ")");
+                $('.title').css("opacity", (1050 - scrollTop) / 100);
+
+                /** railroad - video */
+                if (scrollTop > 1100) {
+                    $('.railroad').css("opacity", (1400 - scrollTop) / 300);
+                } else if (scrollTop > 700) {
+                    $('.railroad').show();
+                    if (!railroadPlayed) {
+                        railroadPlayed = true;
+                        document.getElementById("railroad").play();
+                    }
+                    $('.railroad').css("opacity", (scrollTop - 700) / 300);
+                } else {
+                    $('.railroad').hide();
+                }
+
+                /** The Wall - Text */
+                if (scrollTop > 2200) {
+                    $('.the-wall-text').css("opacity", (2400 - scrollTop) / 200);
+                } else {
+                    $('.the-wall-text').css("opacity", (scrollTop - 1300) / 300);
+                }
+
+                /** The Wall */
+                $('.the-wall').css("opacity", (scrollTop - 1900) / 500);
+                if (scrollTop > 3000) {
+                    const scale = max(0, (3500-scrollTop) / 500);
+                    $('.the-wall').css("transform", "translate(" + (750 * (1 - scale)) + "px, " + (-500 * (1 - scale)) + "px) scale(" + scale + ")");
+                } else {
+                    $('.the-wall').css("transform", "translate(0, 0) scale(1)");
+                }
+
+                /** helicopter */
+                $('.helicopter').css("opacity", (scrollTop - 3000) / 200);
+                if (scrollTop > 4000) {
+                    $('.helicopter').css("transform", "translate(0, " + (4000 - scrollTop) + "px) ");
+                } else {
+                    $('.helicopter').css("transform", "translate(0, 0)");
+                }
+
+                /** dog-sled */
+                if (scrollTop > 6250) {
+                    $('.dog-sled-text').css("opacity", 0);
+                } else if (scrollTop > 4500) {
+                    $('.dog-sled-text').css("opacity", 1);
+                } else {
+                    $('.dog-sled-text').css("opacity", 0);
+                }
+                if (scrollTop > 6500) {
+                    $('.dog-sled').hide();
+                } else if (scrollTop > 6000) {
+                    if (!dogSledPlayed) {
+                        dogSledPlayed = true;
+                        document.getElementById("dog-sled").play();
+                    }
+                    $('.dog-sled').show();
+                } else {
+                    $('.dog-sled').hide();
+                }
+            }
+        </script>
+        <script>
+            /** Animation Engine */
+            $(function() {
+                var scroll = window.requestAnimationFrame ||
+                    function(callback){ window.setTimeout(callback, 1000/60)};
+                function loop() {
+                    updateThemeColor();
+                    onLoop();
+                    scroll(loop);
+                }
+                loop();
+            });
+        </script>
+        <style>
+            body {
+                margin: 0;
+                background-color: rgba(0, 0, 0, 1);
+                height: 15000px;
+            }
+
+            /** First image */
+            .aurora1 {
+                position: fixed;
+                /* top: 200px; */
+                height: 1150px;
+            }
+            .aurora1::before {
+                content: "";
+                position: absolute;
+                background: linear-gradient(rgba(0, 8, 43, 1) 300px, rgba(0, 8, 43, 0));
+                z-index: 1;
+                height: 400px;
+                width: 100%;
+            }
+            .aurora1::after {
+                content: "";
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 1) 20%);
+                z-index: 1;
+                height: 100px;
+                width: 100%;
+            }
+            .aurora1-img {
+                width: 100%;
+            }
+            .aurora1-cover {
+                position: absolute;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 100%;
+                z-index: 2;
+                background: rgba(0, 0, 0, 0);
+            }
+
+            /** First text - This Winter at Alaska */
+            .title {
+                position: relative;
+                top: 1600px;
+                color: rgba(195, 241, 92, 0);
+                z-index: 1;
+                font-size: 64px;
+                text-align: center;
+            }
+
+            /** railroad */
+            .railroad {
+                position: fixed;
+                width: 100%;
+                top: 700px;
+                z-index: -2;
+                opacity: 0;
+            }
+
+            .the-wall-text {
+                position: relative;
+                top: 2600px;
+                color: rgba(161, 199, 235, 1);
+                z-index: 1;
+                font-size: 64px;
+                text-align: center;
+            }
+            .the-wall {
+                position: fixed;
+                top: 300px;
+                width: 100%;
+            }
+
+            .helicopter {
+                position: fixed;
+                top: 0;
+                width: 100%;
+                z-index: -1;
+            }
+
+            .dog-sled-text {
+                position: fixed;
+                top: 800px;
+                color: rgb(132, 97, 57);
+                z-index: -4;
+                font-size: 64px;
+                text-align: center;
+                width: 100%;
+            }
+            .dog-sled {
+                position: fixed;
+                top: 0;
+                width: 100%;
+            }
+        </style>
+    </head>
+    
+    <body>
+        <div class="aurora1">
+            <div class="aurora1-cover"></div>
+            <img class="aurora1-img" src="/aurora1-cut.jpg" />
+        </div>
+        <div class="title">
+            This Winter at Alaska
+        </div>
+        <video class="railroad" id='railroad' muted loop>
+            <source src="/alaska_720.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <div class="the-wall-text">
+            The Wall
+        </div>
+        <img class="the-wall" src="/cliff.jpeg" />
+        <img class="helicopter" src="/helicopter-and-ice.jpg" />
+        <div class="dog-sled-text">
+            And of course, the Dog Sled!
+        </div>
+        <video class="dog-sled" id='dog-sled' muted loop>
+            <source src="/dog_1.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+    </body>
+</html>

@@ -1,59 +1,212 @@
 <html>
     <head>
-        <meta name="theme-color" content="rgba(0, 8, 43, 1)">
+        <meta name="theme-color" content="rgb(0, 0, 0)">
         <title>My Title</title>
-
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="anime.min.js"></script>
+
         <script>
-            $(function() {
-                let railroadPlayed = false;
+            /** utils */
+            function min(a, b) {
+                return a < b ? a : b;
+            }
+            function max(a, b) {
+                return a > b ? a : b;
+            }
+            function getColorString(color) {
+                return "rgba(" + color[0] + ", " + color[1] + ", " + color[2] + ", " + (color[3] || 1) + ")";
+            }
+        </script>
+        <script>
+            /** updateThemeColor */
+            function usePrevColor(top, height, color1, color2) {
+                return color1;
+            }
 
-                function onLoop() {
-                    const scrollTop = $(document).scrollTop();
+            function linear(top, height, color1, color2) {
+                const percent = top / height;
+                const color = [0, 0, 0];
+                for (let i = 0; i < 3; i++) {
+                    color[i] = color1[i] * (1 - percent) + color2[i] * percent;
+                }
+                return color;
+            }
+
+            let prevScrollTop = 0;
+            function logScrollTop() {
+                const scrollTop = $(document).scrollTop();
+                if (scrollTop !== prevScrollTop) {
                     console.log(scrollTop);
+                }
+                prevScrollTop = scrollTop;
+            }
 
-                    /** First image fade on scroll up */
-                    const alpha = scrollTop / 300;
-                    $('.aurora1-cover').css("background-color", "rgba(0, 0, 0, " + alpha + ")");
-                    document.querySelector('meta[name="theme-color"]').setAttribute('content', "rgba(0, " + 8*(1-alpha) + ", " + 43*(1-alpha) + ", 1)");
-                    if (scrollTop > 350) {
-                        $('.aurora1').hide();
-                    } else {
-                        $('.aurora1').show();
+            function updateThemeColor() {
+                const scrollTop = $(document).scrollTop();
+                logScrollTop();
+
+                let prev = themeRegistrar[0], next = undefined;
+
+                for (let i = 0; i < themeRegistrar.length; i++) {
+                    const cur = themeRegistrar[i];
+                    if (cur.top > scrollTop) {
+                        next = cur;
+                        break;
                     }
+                    prev = cur;
+                }
 
-                    /** First text - This Christmas at Alaska */
-                    $('.title').css("color", "rgba(195, 241, 92, " + ((scrollTop - 230) / 300) + ")");
-                    $('.title').css("opacity", (1050 - scrollTop) / 100);
-
-                    /** railroad - background */
-                    if (scrollTop > 700) {
-                        /** background */
-                        const singleColor = 255 * ((scrollTop - 700) / 200);
-                        const colorString = "rgba(" + singleColor + ", " + singleColor + ", " + singleColor + ", 1)";
-                        document.querySelector('meta[name="theme-color"]').setAttribute('content', colorString);
-                        $('body').css("background-color", colorString);
-                    } else {
-                        $('body').css("background-color", "rgba(0, 0, 0, 1)");
-                    }
-                    /** railroad - video */
-                    if (scrollTop > 700) {
-                        $('.railroad').show();
-                        if (!railroadPlayed) {
-                            railroadPlayed = true;
-                            document.getElementById("railroad").play();
-                        }
-                        $('.railroad').css("opacity", (scrollTop - 700) / 300);
-                    } else {
-                        $('.railroad').hide();
+                if (!next) {
+                    next = {
+                        top: 999999999,
+                        background: [0, 0, 0],
                     }
                 }
 
-                /** Animation Engine */
+                const background = (next.gradient || usePrevColor)(scrollTop - prev.top, next.top - prev.top, prev.background, next.background);
+                const themeColor = (next.gradient || usePrevColor)(scrollTop - prev.top, next.top - prev.top, prev.themeColor || prev.background, next.themeColor || next.background);
+
+                $('body').css("background-color", getColorString(background));
+                document.querySelector('meta[name="theme-color"]').setAttribute('content', getColorString(themeColor));
+            }
+        </script>
+        <script>
+            /** Theme Color and Background Registrar */
+            const themeRegistrar = [
+                {
+                    top: 0,
+                    background: [3, 63, 125],
+                    themeColor: [3, 63, 125],
+                },{
+                    top: 500,
+                    background: [3, 63, 125],
+                },{
+                    top: 2000,
+                    background: [254, 255, 255], //There is a bug in safari that setting theme-color to #ffffff will cause it set to a random color
+                    gradient: linear,
+                }, {
+                    top: 5500,
+                    background: [254, 255, 255],
+                }, {
+                    top: 6500,
+                    background: [157, 142, 126],
+                    gradient: linear,
+                }
+            ];
+        </script>
+        <script>
+            const animes = [];
+        </script>
+        <script>
+            /** Module 1 - MovingBoard */
+            $(() => {
+                animes.push(
+                    anime({
+                        targets: '.heart-cloud',
+                        keyframes: [
+                            {
+                                opacity: 0.5,
+                                duration: 500,
+                            }, {
+                                opacity: 0,
+                                scale: 0.95,
+                                'border-radius': '25px',
+                                duration: 500,
+                                /** disappeared */
+                            }
+                        ],
+                        easing: 'linear',
+                        autoplay: false,
+                    })
+                );
+                animes.push(
+                    anime({
+                        targets: '.heart',
+                        keyframes: [
+                            {
+                                scale: 0.9,
+                                'border-radius': '50px',
+                                'box-shadow': '0px 20px 40px rgba(0, 0, 0, 0.2)',
+                                delay: 500,
+                                duration: 1000,
+                            }
+
+                        ],
+                        easing: 'linear',
+                        autoplay: false,
+                    })
+                );
+                animes.push(
+                    anime({
+                        targets: '.movingBoard',
+                        keyframes: [
+                            {
+                                scale: 0.5,
+                                delay: 2500,
+                                duration: 1000,
+                            }, {
+                                'transform-origin': '50% 50%',
+                                translateX: '-50%',
+                                translateY: '-50%',
+                                duration: 0,
+                            }, {
+                                scale: 1,
+                                delay: 500,
+                                duration: 1000,
+                            }
+                        ],
+                        easing: 'easeInOutSine',
+                        autoplay: false,
+                    })
+                );
+                animes.push(
+                    anime({
+                        targets: '.prismatic-img',
+                        keyframes: [
+                            {
+                                scale: 0.9,
+                                duration: 0,
+                            }, {
+                                scale: 1,
+                                'border-radius': '0px',
+                                'box-shadow': '0px 0px 0px rgba(0, 0, 0, 0.2)',
+                                delay: 5500,
+                                duration: 1000,
+                            }
+                        ],
+                        easing: 'linear',
+                        autoplay: false,
+                    })
+                );
+                animes.push(
+                    anime({
+                        targets: '.subtitle',
+                        keyframes: [
+                            {
+                                opacity: 0,
+                                delay: 5500,
+                                duration: 1000,
+                            }
+                        ],
+                        easing: 'linear',
+                        autoplay: false,
+                    })
+                );
+            });
+        </script>
+        <script>
+            /** Animation Engine */
+            function seek() {
+                const scrollTop = $(document).scrollTop();
+                animes.forEach(anime => anime.seek(scrollTop));
+            }
+
+            $(function() {
                 var scroll = window.requestAnimationFrame ||
                     function(callback){ window.setTimeout(callback, 1000/60)};
                 function loop() {
-                    onLoop();
+                    updateThemeColor();
+                    seek();
                     scroll(loop);
                 }
                 loop();
@@ -63,78 +216,108 @@
             body {
                 margin: 0;
                 background-color: rgba(0, 0, 0, 1);
-                height: 5000px;
+                height: 15000px;
             }
-
-            /** First image */
-            .aurora1 {
+        </style>
+        <style>
+            /** Module 1 - MovingBoard */
+            .movingBoard {
                 position: fixed;
-                /* top: 200px; */
-                height: 1150px;
-            }
-            .aurora1::before {
-                content: "";
-                position: absolute;
-                background: linear-gradient(rgba(0, 8, 43, 1) 300px, rgba(0, 8, 43, 0));
-                z-index: 1;
-                height: 400px;
-                width: 100%;
-            }
-            .aurora1::after {
-                content: "";
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 1) 20%);
-                z-index: 1;
-                height: 100px;
-                width: 100%;
-            }
-            .aurora1-img {
-                width: 100%;
-            }
-            .aurora1-cover {
-                position: absolute;
-                top: 0;
-                left: 0;
-                height: 100%;
-                width: 100%;
-                z-index: 2;
-                background: rgba(0, 0, 0, 0);
+                top: 10vh;
+                width: 200vw;
+                height: 150vw;
+                transform-origin: 0 0;
             }
 
-            /** First text - This Christmas at Alaska */
+            .movingBoard > div {
+                width: 100vw;
+            }
+
+            .the-heart {
+                top: 300px;
+            }
+            .the-heart img {
+                position: fixed;
+                width: 100vw;
+            }
+            .heart-cloud {
+                opacity: 1;
+            }
+
+            .prismatic {
+                position: absolute;
+                top: 1500px;
+                left: 100vw;
+                width: 100vw;
+            }
+            .prismatic-img {
+                width: 100vw;
+                /** scale: 0.9; set in animation */
+                border-radius: 50px;
+                box-shadow: 0px 20px 40px rgba(0, 0, 0, 0.2);
+            }
+
             .title {
-                position: relative;
-                top: 1600px;
-                color: rgba(195, 241, 92, 0);
-                z-index: 1;
-                font-size: 64px;
+                position: absolute;
+                top: 900px;
+                width: 100vw;
+                scale: 0.9;
+                opacity: 1;
+            }
+            .title p {
                 text-align: center;
+                font-size: 80px;
+                margin: 0;
+                color: rgb(3, 63, 125);
             }
 
-            /** railroad */
-            .railroad {
-                position: fixed;
-                width: 100%;
-                top: 700px;
-                z-index: -2;
-                opacity: 0;
+            .subtitle {
+                position: absolute;
+                top: 900px;
+                left: 100vw;
+                width: 100vw;
+                scale: 0.9;
             }
+            .subtitle p {
+                text-align: center;
+                font-size: 80px;
+                margin: 0;
+                color: rgb(3, 63, 125);
+            }
+        </style>
+        <style>
+            /** Module 2 - Slides */
+            .slide {
+                position: fixed;
+                top: 0;
+                width: 100vw;
+                height: 100vh;
+            }
+
         </style>
     </head>
     
     <body>
-        <div class="aurora1">
-            <div class="aurora1-cover"></div>
-            <img class="aurora1-img" src="aurora1-cut.jpg" />
+        <div class="movingBoard" id="movingBoard">
+            <div class="the-heart">
+                <img class="heart" src="/heart.JPEG" />
+                <img class="heart-cloud" src="/heart-cloud.jpg" />
+            </div>
+            <div class="title ">
+                <p>2021年</p>
+                <p>夏</p>
+                <p>在黄石</p>
+            </div>
+            <div class="subtitle">
+                <p>&nbsp;</p>
+                <p>大棱镜温泉</p>
+            </div>
+            <div class="prismatic">
+                <img class="prismatic-img" src="/grand-prismatic-spring.JPEG" />
+            </div>
         </div>
-        <div class="title">
-            This Christmas at Alaska
+        <div class="slide" id="slide">
+
         </div>
-        <video class="railroad" id='railroad' muted>
-            <source src="alaska_720.mp4" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
     </body>
 </html>
